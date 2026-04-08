@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Email Threat Detector</title>
+
+    <!-- ✅ FIXED CSS LINK -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🚀 AI Phishing & Spam Detector</h1>
+    <p>Developed by Priyadharshini</p>
+
+    <form action="/predict" method="POST">
+        <textarea id="message" name="message" placeholder="Paste your email here..." required>{{ message }}</textarea>
+        <br>
+        <button type="submit">Analyze Email</button>
+    </form>
+
+    {% if prediction is not none %}
+    <div class="result">
+        <p><strong>Prediction:</strong>
+            {% if prediction == 1 %}
+                <span style="color:red;">Spam ❌</span>
+            {% else %}
+                <span style="color:lightgreen;">Not Spam ✅</span>
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

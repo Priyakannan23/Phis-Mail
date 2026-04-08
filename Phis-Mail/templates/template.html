@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Phishing & Spam Detector</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 28px;
+            width: 100%;
+            max-width: 780px;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 140px;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            background: #0d1117;
+            color: #e6edf3;
+            font-size: 0.95rem;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #58a6ff;
+        }
+
+        button {
+            display: block;
+            margin: 18px auto 0;
+            padding: 12px 40px;
+            background: #238636;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #2ea043;
+        }
+
+        /* Result Banner */
+        .result-banner {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 0;
+        }
+
+        .result-spam {
+            background: #3d0c0c;
+            color: #ff6b6b;
+            border: 1px solid #ff4444;
+        }
+
+        .result-safe {
+            background: #0c2d0c;
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+
+        /* Confidence Bar */
+        .confidence-section {
+            margin-top: 20px;
+        }
+
+        .confidence-section h3 {
+            font-size: 0.9rem;
+            color: #8b949e;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .bar-track {
+            background: #21262d;
+            border-radius: 20px;
+            height: 18px;
+            width: 100%;
+            overflow: hidden;
+            border: 1px solid #30363d;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.8s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .bar-spam {
+            background: linear-gradient(90deg, #b91c1c, #ef4444);
+        }
+
+        .bar-safe {
+            background: linear-gradient(90deg, #15803d, #4ade80);
+        }
+
+        .bar-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-top: 5px;
+        }
+
+        /* Keyword highlights */
+        .highlight-section h3 {
+            font-size: 0.9rem;
+            color: #8b949e;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .email-preview {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            word-break: break-word;
+        }
+
+        mark.spam-word {
+            background: #7f1d1d;
+            color: #fca5a5;
+            border-radius: 4px;
+            padding: 1px 4px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .keyword-chips {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .chip {
+            background: #3d1a1a;
+            color: #f87171;
+            border: 1px solid #7f1d1d;
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        /* Charts */
+        .charts-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .chart-box {
+            flex: 1;
+            min-width: 260px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .chart-box h3 {
+            font-size: 0.82rem;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #c9d1d9;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .no-result {
+            color: #8b949e;
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 8px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Phis-Mail</h1>
+
+    <!-- Input Card -->
+    <div class="card">
+        <form action="/predict" method="POST">
+            <textarea name="message" placeholder="Paste your email content here...">{{ email_message or '' }}</textarea>
+            <button type="submit">Analyze Email</button>
+        </form>
+    </div>
+
+    {% if prediction %}
+
+    <!-- Result Banner -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        {% if prediction == "SPAM" %}
+        <div class="result-banner result-spam">🚨 This email is <span style="color:#ff4444">SPAM / Phishing!</span>
+        </div>
+        {% else %}
+        <div class="result-banner result-safe">✅ This email is <span style="color:#4caf50">Safe (Not Spam)</span></div>
+        {% endif %}
+    </div>
+
+    <!-- Confidence Score Card -->
+    <div class="card">
+        <div class="section-title">Confidence Score</div>
+        <div class="confidence-section">
+            <h3>Spam probability</h3>
+            <div class="bar-track">
+                <div class="bar-fill {% if prediction == 'SPAM' %}bar-spam{% else %}bar-safe{% endif %}"
+                    style="width: {{ spam_prob }}%">{{ spam_prob }}%</div>
+            </div>
+            <div class="bar-labels"><span>0% — Safe</span><span>100% — Spam</span></div>
+        </div>
+        <div class="confidence-section" style="margin-top:14px">
+            <h3>Ham (safe) probability</h3>
+            <div class="bar-track">
+                <div class="bar-fill bar-safe" style="width: {{ ham_prob }}%">{{ ham_prob }}%</div>
+            </div>
+            <div class="bar-labels"><span>0%</span><span>100% — Safe</span></div>
+        </div>
+    </div>
+
+    <!-- Keyword Highlights Card -->
+    <div class="card">
+        <div class="section-title">Keyword Analysis</div>
+        <div class="highlight-section">
+            <h3>Email with suspicious words highlighted</h3>
+            <div class="email-preview">{{ highlighted_text | safe }}</div>
+            {% if found_keywords %}
+            <div class="keyword-chips">
+                {% for kw in found_keywords %}
+                <span class="chip">⚠ {{ kw }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="no-result" style="margin-top:10px">No suspicious keywords detected.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Charts Card -->
+    <div class="card">
+        <div class="section-title">Visual Analysis</div>
+        <div class="charts-row">
+            <div class="chart-box">
+                <h3>Spam vs Safe — Doughnut</h3>
+                <canvas id="doughnutChart" height="200"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>Confidence — Bar chart</h3>
+                <canvas id="barChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const spamProb = {{ spam_prob }};
+        const hamProb = {{ ham_prob }};
+        const isSpam = "{{ prediction }}" === "SPAM";
+
+        const spamColor = '#ef4444';
+        const safeColor = '#4ade80';
+        const mainColor = isSpam ? spamColor : safeColor;
+
+        // Doughnut chart
+        new Chart(document.getElementById('doughnutChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Spam', 'Safe'],
+                datasets: [{
+                    data: [spamProb, hamProb],
+                    backgroundColor: [spamColor, safeColor],
+                    borderColor: '#161b22',
+                    borderWidth: 3,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: { color: '#c9d1d9', font: { size: 13 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${ctx.parsed}%`
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+
+        // Bar chart
+        new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Spam %', 'Safe %'],
+                datasets: [{
+                    label: 'Probability',
+                    data: [spamProb, hamProb],
+                    backgroundColor: [spamColor, safeColor],
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        min: 0, max: 100,
+                        ticks: { color: '#8b949e', callback: v => v + '%' },
+                        grid: { color: '#21262d' }
+                    },
+                    x: {
+                        ticks: { color: '#c9d1d9', font: { weight: '600' } },
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.y}%`
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+    {% endif %}
+
+</body>
+
+</html>
